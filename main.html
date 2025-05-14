@@ -5,25 +5,7 @@
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <!--
-    <h1>Chat</h1>
-    <div id="whole">
-        <div id="chat-area"></div>
-        <div>
-            <input type="text" id="message-input" placeholder="Enter your message">
-            <button id="send-button">&#8594;</button>
-        </div>
-    </div>
-    <script src="main.js"></script>
-    -->
-    <div id="login-container">
-        <h2>Enter Your Username</h2>
-        <input type="text" id="username-input" placeholder="Username">
-        <button id="username-button">Join Chat</button>
-    </div>
-
-    <!-- Hides until the display is set to not none -->
-    <div id="chat-container" style="display: none;">
+    <div id="chat-container">
         <h1>Chat</h1>
         <div id="chat-area"></div>
         <div>
@@ -32,52 +14,5 @@
         </div>
     </div>
     <script src="main.js"></script>
-    <!-- 
-    <script>
-        const chatArea = document.getElementById('chat-area');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const websocket = new WebSocket('ws://localhost:8080/ws');
-
-        websocket.onopen = () => {
-            console.log('WebSocket connection established.');
-        };
-
-        websocket.onmessage = (event) => {
-            const message = event.data;
-            const messageElement = document.createElement('p');
-            messageElement.textContent = 'Received: ' + message;
-            chatArea.appendChild(messageElement);
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        };
-
-        websocket.onclose = () => {
-            console.log('WebSocket connection closed.');
-        };
-
-        websocket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
-
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value;
-            if (message) {
-                websocket.send(message);
-                const messageElement = document.createElement('p');
-                messageElement.textContent = 'Sent: ' + message;
-                chatArea.appendChild(messageElement);
-                messageInput.value = ''; // Clear the input
-                chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-            }
-        });
-
-        messageInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) { // Check if Enter key was pressed without Shift
-                sendButton.click(); // Trigger the send button click
-                event.preventDefault(); // Prevent the default Enter key behavior (like adding a newline in some contexts)
-            }
-        });
-    </script>
-    -->
 </body>
 </html>

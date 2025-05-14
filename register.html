@@ -1,0 +1,48 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+    <title>Chat Registration</title> 
+    <link rel="stylesheet" href="main.css">
+</head> 
+<body> 
+    <div id="login-container"> 
+        <h2>Register To Chat</h2> 
+        <form id="register-form"> 
+            <input type="text" id="username" placeholder="Username"> 
+            <input type="password" id="password" placeholder="Password"> <br> 
+            <button type="submit">Register</button> 
+            <p id="error-message" class="error-message" style="display: none;"></p> 
+            <p>Already have an account? <a href="/login.html">Login</a></p> 
+        </form> 
+    </div> 
+
+    <script>
+        const registerForm = document.getElementById('register-form')
+        const errorMessage = document.getElementById('error-message')
+
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch ('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ username, password }),
+            });
+
+            const data = await response.json()
+
+            if(response.ok && data.status === 'success') {
+                alert('Registration successful! Please log in.')
+                window.location.href = '/login.html'
+            } else {
+                errorMessage.textContent = data.message || 'Registration failed.';
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

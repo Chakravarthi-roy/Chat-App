@@ -1,34 +1,19 @@
-const loginContainer = document.getElementById('login-container')
-const usernameInput = document.getElementById('username-input')
-const chatContainer = document.getElementById('chat-container')
-const usernameButton = document.getElementById('username-button') 
-
 const chatArea = document.getElementById('chat-area');
 const messageInput = document.getElementById('message-input');
 const sendButton = document.getElementById('send-button');
 // const websocket = new WebSocket('ws://localhost:8080/ws');
 let websocket; //connected only when user is logged in! until then, stays a variable
-let username;
 
-//First username eventListener
-usernameButton.addEventListener('click', () => {
-    username = usernameInput.value.trim();
-    if(username) {
-        loginContainer.style.display = 'none';
-        chatContainer.style.display = 'block';
-        startWebSocket();
-    } else {
-        alert('Please enter a username!')
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    startWebSocket();
+    // const storedUsername = prompt('Enter your user/nickname:')
+    // if(storedUsername) {
+    //     username = storedUsername
+    //     startWebSocket();
+    // } else {
+    //     startWebSocket();
+    // }
 });
-
-usernameInput.addEventListener('keypress', (event) => {
-    if(event.key === 'Enter' && !event.shiftKey) {
-        usernameButton.click();
-        event.preventDefault();
-    }
-});
-
 
 //now the websocket function
 function startWebSocket() {
@@ -42,9 +27,9 @@ function startWebSocket() {
     
     websocket.onmessage = (event) => {
         const message = event.data
-        const messageElement = document.createElement('p')
+        const messageElement = document.createElement('p');
         messageElement.textContent = 'Received: '+ message;
-        chatArea.appendChild(messageElement)
+        chatArea.appendChild(messageElement);
         chatArea.scrollTop = chatArea.scrollHeight 
     };
     
@@ -60,9 +45,9 @@ function startWebSocket() {
         const message = messageInput.value
         if(message) {
             websocket.send(message)
-            const messageElement = document.createElement('p')
+            const messageElement = document.createElement('p');
             messageElement.textContent = 'Sent: '+ message;
-            chatArea.appendChild(messageElement)
+            chatArea.appendChild(messageElement);
             messageInput.value = ''
             chatArea.scrollTop = chatArea.scrollHeight
         }

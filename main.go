@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"mychat/login"
 	"net/http"
 	"sync"
 
@@ -18,6 +19,7 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	conn     *websocket.Conn
 	username string
+	userID   int
 }
 
 var clients = make(map[*websocket.Conn]*Client)
@@ -31,14 +33,16 @@ func handleConncetions(w http.ResponseWriter, r *http.Request) {
 
 	defer ws.Close()
 
-	client := &Client{conn: ws, username: "Anonymous"} //Default username
-
+	//
 	_, usernameBytes, err := ws.ReadMessage()
 	if err != nil {
 		log.Printf("error reading username: %v", err)
 		return
 	}
-	client.username = string(usernameBytes)
+	username := string(usernameBytes)
+	//
+
+	client := &Client{conn: ws, username: username, userID: 0} //Default username
 
 	mutex.Lock()
 	clients[ws] = client
@@ -88,9 +92,16 @@ func handleConncetions(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/ws", handleConncetions)
+	http.HandleFunc("/login", login.LoginHandler)
+	http.HandleFunc("/register", login.RegisterHandler)
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Test Endpoint works")
+	})
+
+	fs := http.FileServer(http.Dir("."))
+	http.Handle("/", fs)
 
 	fmt.Println("WebSocket server started on :8080")
-
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

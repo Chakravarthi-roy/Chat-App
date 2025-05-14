@@ -3,6 +3,10 @@ body {
     margin: 20px;
     background-color: #25D366;
     align-items: center;
+    font-family: 'source code pro';
+}
+h2 {
+    letter-spacing: -1px;
 }
 
 /* login box */
@@ -15,28 +19,52 @@ body {
     padding: 20px;
     border-radius: 5px;
     text-align: center;
+    width: 350px;
 }
-#username-input{
+#username{
+    width: auto;
     height: 20px;
     border: none;
     outline: none;
     border-radius: 5px;
-    padding: 10px;
+    padding: 12px;
+    margin: 2px;
+    width: 230px;
 }
-#username-button{
-    height: 40px;
+#password{
+    height: 20px;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    padding: 12px;
+    margin: 2px;
+    width: 230px;
+}
+button{
+    /* height: 30px; */
+    cursor: pointer;
     padding: 10px;
     border-radius: 5px;
     border: none;
     outline: none;
     background-color: rgba(18, 140, 70, 0.9);
     color: white;
+    margin: 2px;
+}
+p {
+    font-size: small;
+    font-family: 'Source code pro';
+    letter-spacing: -0.5px;
+}
+a {
+    text-decoration: none;
+}
+.error-message {
+    color: red; 
+    margin-top: 10px;
 }
 
 /* chat box */
-#chat-container{
-    display: none; 
-}
 #chat-container{
     width: 300px;
     padding: 10px 12px 10px 12px;
@@ -53,7 +81,7 @@ body {
     background-color: rgb(252, 247, 233);
 }
 #message-input {
-    width: 79%;
+    width: 250px;
     padding: 8px;
     margin-right: 5px;
     border: none;
@@ -62,13 +90,14 @@ body {
     color: black;
 }
 #send-button {
-    width: 35px;
-    height: 35px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     font-size: 20px;
     font-weight: bolder;
     border: none;
     background-color: #0bd607;
+    padding: none;
 }
 
 ::-webkit-scrollbar{
