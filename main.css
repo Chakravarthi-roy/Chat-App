@@ -115,3 +115,97 @@ a {
 ::-webkit-scrollbar-corner{
     background-color: #ccc;
 }
+
+
+/* ============================================
+   NEW STYLES - Chat Header & Messages
+   ============================================ */
+
+/* Chat Header */
+#chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#chat-header h1 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #075e54;
+}
+
+#header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#user-info {
+    font-size: 0.85em;
+    color: #555;
+    font-weight: bold;
+}
+
+#logout-button {
+    background-color: #dc3545;
+    padding: 6px 12px;
+    font-size: 0.75em;
+    border-radius: 5px;
+}
+
+#logout-button:hover {
+    background-color: #c82333;
+}
+
+/* Input Area */
+#input-area {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* ============================================
+   Message Styling (sent/received/system)
+   ============================================ */
+
+#chat-area p {
+    margin: 5px 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+    clear: both;
+}
+
+/* Messages you sent */
+#chat-area p.sent {
+    background-color: #dcf8c6;
+    margin-left: auto;
+    margin-right: 0;
+    text-align: left;
+    border-bottom-right-radius: 2px;
+}
+
+/* Messages you received */
+#chat-area p.received {
+    background-color: #ffffff;
+    margin-right: auto;
+    margin-left: 0;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* System messages (connected, disconnected, etc) */
+#chat-area p.system {
+    background-color: #fff9c4;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.8em;
+    color: #666;
+    margin: 10px auto;
+    max-width: 90%;
+    border-radius: 5px;
+}

@@ -6,13 +6,29 @@
 </head>
 <body>
     <div id="chat-container">
-        <h1>Chat</h1>
+        <!-- Header with user info and logout -->
+        <div id="chat-header">
+            <h1>Chat</h1>
+            <div id="header-right">
+                <span id="user-info"></span>
+                <button id="logout-button" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Chat messages area -->
         <div id="chat-area"></div>
-        <div>
-            <input type="text" id="message-input" placeholder="Enter your message">
+
+        <!-- Input area -->
+        <div id="input-area">
+            <input type="text" id="message-input" placeholder="Enter your message" autocomplete="off">
             <button id="send-button">&#8594;</button>
         </div>
     </div>
+
     <script src="main.js"></script>
+    <script>
+        // Display username in header
+        document.getElementById('user-info').textContent = localStorage.getItem('username') || 'Unknown';
+    </script>
 </body>
 </html>

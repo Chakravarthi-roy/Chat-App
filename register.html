@@ -8,8 +8,8 @@
     <div id="login-container"> 
         <h2>Register To Chat</h2> 
         <form id="register-form"> 
-            <input type="text" id="username" placeholder="Username"> 
-            <input type="password" id="password" placeholder="Password"> <br> 
+            <input type="text" id="username" placeholder="Username" required> 
+            <input type="password" id="password" placeholder="Password" required> <br> 
             <button type="submit">Register</button> 
             <p id="error-message" class="error-message" style="display: none;"></p> 
             <p>Already have an account? <a href="/login.html">Login</a></p> 
@@ -17,15 +17,36 @@
     </div> 
 
     <script>
-        const registerForm = document.getElementById('register-form')
-        const errorMessage = document.getElementById('error-message')
+    const registerForm = document.getElementById('register-form');
+    const errorMessage = document.getElementById('error-message');
 
-        registerForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    registerForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
 
-            const response = await fetch ('/register', {
+        // Client-side validation
+        if (!username || !password) {
+            errorMessage.textContent = 'Please enter both username and password.';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        if (username.length < 3) {
+            errorMessage.textContent = 'Username must be at least 3 characters.';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        if (password.length < 6) {
+            errorMessage.textContent = 'Password must be at least 6 characters.';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        try {
+            const response = await fetch('/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -33,16 +54,32 @@
                 body: new URLSearchParams({ username, password }),
             });
 
-            const data = await response.json()
+            // Safe JSON parsing
+            let data;
+            const text = await response.text();
+            try {
+                data = JSON.parse(text);
+            } catch {
+                data = { message: text };
+            }
 
-            if(response.ok && data.status === 'success') {
-                alert('Registration successful! Please log in.')
-                window.location.href = '/login.html'
+            if (response.ok && data.status === 'success') {
+                alert('Registration successful! Please log in.');
+                window.location.href = '/login.html';
             } else {
-                errorMessage.textContent = data.message || 'Registration failed.';
+                let msg = data.message || 'Registration failed.';
+                if (msg.includes('unique') || msg.includes('duplicate') || msg.includes('exists')) {
+                    msg = 'Username already taken. Please choose another.';
+                }
+                errorMessage.textContent = msg;
                 errorMessage.style.display = 'block';
             }
-        });
+        } catch (error) {
+            console.error('Registration error:', error);
+            errorMessage.textContent = 'Network error. Please try again.';
+            errorMessage.style.display = 'block';
+        }
+    });
     </script>
 </body>
 </html>

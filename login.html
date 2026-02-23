@@ -38,6 +38,9 @@
             const data = await response.json()
 
             if(response.ok && data.status === 'success') {
+                // Store username in localStorage so main.js can access it
+                localStorage.setItem('username', username);
+                localStorage.setItem('userID', data.userID);
                 window.location.href = '/main.html';
             } else {
                 errorMessage.textContent = data.message || 'Login failed. Invalid credentials.';
