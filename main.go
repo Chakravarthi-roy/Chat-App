@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -30,6 +31,7 @@ type Client struct {
 	conn     *websocket.Conn
 	username string
 	userID   int
+	send     chan []byte // channel for sending messages to this client
 }
 
 // ============================================
@@ -39,18 +41,67 @@ type Client struct {
 var clients = make(map[*websocket.Conn]*Client)
 var mutex sync.Mutex
 
+const (
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
+	maxMessageSize = 512
+	sendBufferSize = 256
+)
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+// ============================================
+// CLIENT WRITE PUMP (Async sender)
+// ============================================
+
+func (c *Client) writePump() {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		ticker.Stop()
+		c.conn.Close()
+	}()
+
+	for {
+		select {
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				// Channel closed
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			err := c.conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				log.Printf("Write error to %s: %v", c.username, err)
+				return
+			}
+
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+		}
+	}
+}
 
 // Broadcast system message to all clients (optionally exclude one)
 func broadcastSystemMessage(message string, exclude *websocket.Conn) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	fullMessage := []byte("[System] " + message)
 	for _, c := range clients {
 		if c.conn != exclude {
-			c.conn.WriteMessage(websocket.TextMessage, []byte("[System] "+message))
+			select {
+			case c.send <- fullMessage:
+			default:
+				log.Printf("Client %s send buffer full, skipping", c.username)
+			}
 		}
 	}
 }
@@ -101,11 +152,14 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		conn:     ws,
 		username: username,
 		userID:   0,
+		send:     make(chan []byte, sendBufferSize),
 	}
 
 	mutex.Lock()
 	clients[ws] = client
 	mutex.Unlock()
+
+	go client.writePump()
 
 	log.Printf("Client connected: %s (%s)", client.username, ws.RemoteAddr())
 
@@ -114,7 +168,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	// Message reading loop
 	for {
-		mt, p, err := ws.ReadMessage()
+		_, p, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("Read error from %s: %v", client.username, err)
 			break
@@ -136,11 +190,10 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		mutex.Lock()
 		for _, c := range clients {
 			if c.conn != ws {
-				err = c.conn.WriteMessage(mt, []byte(formattedMessage))
-				if err != nil {
-					log.Printf("Write error to %s: %v", c.username, err)
-					c.conn.Close()
-					delete(clients, c.conn)
+				select {
+				case c.send <- []byte(formattedMessage):
+				default:
+					log.Printf("Client %s send buffer full, dropping message", c.username)
 				}
 			}
 		}
@@ -150,6 +203,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	// Cleanup on disconnect
 	mutex.Lock()
 	delete(clients, ws)
+	close(client.send)
 	mutex.Unlock()
 
 	log.Printf("Client disconnected: %s (%s)", client.username, ws.RemoteAddr())
