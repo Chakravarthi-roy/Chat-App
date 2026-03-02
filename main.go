@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"mychat/login"
@@ -15,6 +16,15 @@ import (
 // ============================================
 // WEBSOCKET SETUP
 // ============================================
+
+type Message struct {
+	Type      string   `json:"type"` // "public", "private", "system", "user_list"
+	From      string   `json:"from"`
+	To        string   `json:"to,omitempty"`
+	Content   string   `json:"content"`
+	Users     []string `json:"users,omitempty"`
+	Timestamp int64    `json:"timestamp"`
+}
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -52,6 +62,73 @@ const (
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+// Get list of online usernames
+func getOnlineUsernames() []string {
+	users := make([]string, 0, len(clients))
+	for _, c := range clients {
+		users = append(users, c.username)
+	}
+	return users
+}
+
+// Send message to a specific user
+func sendToUser(username string, msg Message) bool {
+	for _, c := range clients {
+		if c.username == username {
+			data, err := json.Marshal(msg)
+			if err != nil {
+				return false
+			}
+			select {
+			case c.send <- data:
+				return true
+			default:
+				return false
+			}
+		}
+	}
+	return false
+}
+
+// Broadcast message to all users except sender
+func broadcastMessage(msg Message, excludeUsername string) {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshaling message: %v", err)
+		return
+	}
+
+	for _, c := range clients {
+		if c.username != excludeUsername {
+			select {
+			case c.send <- data:
+			default:
+				log.Printf("Client %s send buffer full", c.username)
+			}
+		}
+	}
+}
+
+// Send user list to all clients
+func broadcastUserList() {
+	users := getOnlineUsernames()
+	msg := Message{
+		Type:      "user_list",
+		Users:     users,
+		Timestamp: time.Now().UnixMilli(),
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+
+	for _, c := range clients {
+		select {
+		case c.send <- data:
+		default:
+		}
+	}
+}
 
 // ============================================
 // CLIENT WRITE PUMP (Async sender)
@@ -90,20 +167,17 @@ func (c *Client) writePump() {
 }
 
 // Broadcast system message to all clients (optionally exclude one)
-func broadcastSystemMessage(message string, exclude *websocket.Conn) {
+func broadcastSystemMessage(content string, excludeUsername string) {
+	msg := Message{
+		Type:      "system",
+		Content:   content,
+		Timestamp: time.Now().UnixMilli(),
+	}
+
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	fullMessage := []byte("[System] " + message)
-	for _, c := range clients {
-		if c.conn != exclude {
-			select {
-			case c.send <- fullMessage:
-			default:
-				log.Printf("Client %s send buffer full, skipping", c.username)
-			}
-		}
-	}
+	broadcastMessage(msg, excludeUsername)
 }
 
 // Get list of online usernames
@@ -163,8 +237,21 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Client connected: %s (%s)", client.username, ws.RemoteAddr())
 
+	// Send current user list to the new client
+	mutex.Lock()
+	users := getOnlineUsernames()
+	mutex.Unlock()
+
+	welcomeMsg := Message{
+		Type:      "user_list",
+		Users:     users,
+		Timestamp: time.Now().UnixMilli(),
+	}
+	data, _ := json.Marshal(welcomeMsg)
+	client.send <- data
+
 	// Notify others that user joined
-	broadcastSystemMessage(fmt.Sprintf("%s joined the chat", username), ws)
+	broadcastSystemMessage(fmt.Sprintf("%s joined the chat", username), username)
 
 	// Message reading loop
 	for {
@@ -174,29 +261,65 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		message := strings.TrimSpace(string(p))
+		messageText := strings.TrimSpace(string(p))
 
 		// Skip empty messages
-		if message == "" {
+		if messageText == "" {
 			continue
 		}
 
-		log.Printf("Message from %s: %s", client.username, message)
+		log.Printf("Message from %s: %s", client.username, messageText)
 
-		// Format message with username
-		formattedMessage := fmt.Sprintf("%s: %s", client.username, message)
+		// Check if it's a private message (@username message)
+		if strings.HasPrefix(messageText, "@") {
+			parts := strings.SplitN(messageText, " ", 2)
+			if len(parts) == 2 {
+				targetUser := strings.TrimPrefix(parts[0], "@")
+				privateContent := parts[1]
 
-		// Broadcast to all except sender
-		mutex.Lock()
-		for _, c := range clients {
-			if c.conn != ws {
-				select {
-				case c.send <- []byte(formattedMessage):
-				default:
-					log.Printf("Client %s send buffer full, dropping message", c.username)
+				privateMsg := Message{
+					Type:      "private",
+					From:      client.username,
+					To:        targetUser,
+					Content:   privateContent,
+					Timestamp: time.Now().UnixMilli(),
 				}
+
+				// Send to target user
+				mutex.Lock()
+				sent := sendToUser(targetUser, privateMsg)
+				mutex.Unlock()
+
+				// Also send back to sender (so they see their own message)
+				privateMsg.Type = "private_sent"
+				data, _ := json.Marshal(privateMsg)
+				client.send <- data
+
+				if !sent {
+					// User not found or offline
+					errorMsg := Message{
+						Type:      "system",
+						Content:   fmt.Sprintf("User '%s' is not online", targetUser),
+						Timestamp: time.Now().UnixMilli(),
+					}
+					data, _ := json.Marshal(errorMsg)
+					client.send <- data
+				}
+
+				continue
 			}
 		}
+
+		// Public message - broadcast to all
+		publicMsg := Message{
+			Type:      "public",
+			From:      client.username,
+			Content:   messageText,
+			Timestamp: time.Now().UnixMilli(),
+		}
+
+		mutex.Lock()
+		broadcastMessage(publicMsg, client.username)
 		mutex.Unlock()
 	}
 
@@ -209,7 +332,12 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Client disconnected: %s (%s)", client.username, ws.RemoteAddr())
 
 	// Notify others that user left
-	broadcastSystemMessage(fmt.Sprintf("%s left the chat", username), nil)
+	broadcastSystemMessage(fmt.Sprintf("%s left the chat", username), "")
+
+	// Broadcast updated user list
+	mutex.Lock()
+	broadcastUserList()
+	mutex.Unlock()
 }
 
 // ============================================

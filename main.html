@@ -5,30 +5,47 @@
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <div id="chat-container">
-        <!-- Header with user info and logout -->
-        <div id="chat-header">
-            <h1>Chat</h1>
-            <div id="header-right">
-                <span id="user-info"></span>
-                <button id="logout-button" onclick="logout()">Logout</button>
+    <div id="app-container">
+        <!-- Main Chat Area -->
+        <div id="chat-container">
+            <!-- Header -->
+            <div id="chat-header">
+                <h1>Chat</h1>
+                <div id="header-right">
+                    <span id="user-info"></span>
+                    <button id="logout-button" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- Chat Tabs (Public + Private chats) -->
+            <div id="chat-tabs">
+                <button class="chat-tab active" data-chat="public">
+                    🌐 Public
+                    <span class="unread-badge" style="display: none;">0</span>
+                </button>
+            </div>
+
+            <!-- Chat messages area -->
+            <div id="chat-area" data-current-chat="public">
+                <!-- Messages will appear here -->
+            </div>
+
+            <!-- Input area -->
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Type a message... (use @username for private)" autocomplete="off">
+                <button id="send-button">➤</button>
             </div>
         </div>
 
-        <!-- Chat messages area -->
-        <div id="chat-area"></div>
-
-        <!-- Input area -->
-        <div id="input-area">
-            <input type="text" id="message-input" placeholder="Enter your message" autocomplete="off">
-            <button id="send-button">&#8594;</button>
+        <!-- Side Panel - Online Users -->
+        <div id="users-panel">
+            <h3>Online Users</h3>
+            <div id="online-users-list">
+                <!-- Users will appear here -->
+            </div>
         </div>
     </div>
 
     <script src="main.js"></script>
-    <script>
-        // Display username in header
-        document.getElementById('user-info').textContent = localStorage.getItem('username') || 'Unknown';
-    </script>
 </body>
 </html>
