@@ -114,10 +114,6 @@ Tested with **k6**:
 # Install k6
 brew install k6        # Mac
 choco install k6       # Windows
-
-# Run
-cd loadtest
-k6 run websocket_test.js
 ```
 OR (for windows)
 1. Go to [k6 GitHub Releases](https://github.com/grafana/k6/releases)
@@ -134,6 +130,10 @@ OR (for windows)
 6. Open a new terminal and verify:
 ```bash
 k6 version
+
+# Run
+cd loadtest
+k6 run websocket_test.js
 ```
 ---
 
