@@ -1,16 +1,16 @@
 # Real-Time Chat Application
 
-A real-time chat app built with Go and WebSockets. I built this to understand how persistent connections, message broadcasting, and real-time communication actually work under the hood — not just use a library, but really get it.
+A real-time chat app built with Go and WebSockets. I built this to understand how persistent connections, message broadcasting, and real-time communication actually work under the hood, not just use a library, but really get it.
 
-It handles **500 concurrent users**, **37,000+ messages per second**, and **sub-200ms latency** with a 99% message delivery rate under load.
+Currently, it handles **500 concurrent users**, **37,000+ messages per second**, and **sub-200ms latency** with a 99% message delivery rate under load.
 
-Built with **Go**, **PostgreSQL**, and **Vanilla JavaScript**.
+Built with **Go**, **PostgreSQL**, and **JavaScript**.
 
 ---
 
 ## Why I Built This
 
-I wanted to learn Go and understand WebSockets from first principles. I also have a feature idea I want to build eventually — voice transmission and a drawing canvas for sending sketches — and this chat app is the foundation for that.
+I wanted to learn Go and understand WebSockets from first principles. I also have a feature idea I want to build eventually and this chat app is the foundation for that.
 
 ---
 
@@ -37,7 +37,7 @@ The server maintains a persistent WebSocket connection with each user. When some
 **Features:**
 - User registration and login
 - Real-time public chat
-- Private messaging using `@username message`
+- Private messaging
 - Online users list in sidebar
 - Unread message indicators
 
@@ -157,7 +157,3 @@ Currently scaling the architecture to handle 10,000+ concurrent users:
 - Worker pool for parallel message broadcasting (16 workers)
 - Redis Pub/Sub for horizontal scaling across multiple servers
 - CI/CD pipeline with automated deployment
-
-Features I want to build next:
-- Voice transmission
-- Drawing canvas to send sketches as messages
